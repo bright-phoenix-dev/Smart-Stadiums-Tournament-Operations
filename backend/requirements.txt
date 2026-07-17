@@ -1,0 +1,20 @@
+# Smart Stadium Platform — Python Dependencies
+# ==============================================
+# Core framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pydantic==2.9.0
+
+# Security
+python-jose[cryptography]==3.3.0
+
+# GenAI
+google-generativeai==0.8.0
+
+# Testing
+pytest==8.3.0
+pytest-asyncio==0.24.0
+httpx==0.27.0
+
+# Utilities
+python-multipart==0.0.9
