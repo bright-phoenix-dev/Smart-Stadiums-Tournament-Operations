@@ -47,7 +47,7 @@ This solution specifically models **MetLife Stadium** in East Rutherford, New Je
 
 The system follows a **layered clean architecture** pattern with strict separation of concerns:
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │  Frontend (React + Vite)                        │
 │  ├── Pages (Dashboard, FanView)                 │
@@ -58,7 +58,7 @@ The system follows a **layered clean architecture** pattern with strict separati
 │  Backend (FastAPI)                              │
 │  ├── Routes (API endpoints — thin controllers)  │
 │  ├── Services (Business logic — pure functions) │
-│  ├── Middleware (Security, RBAC, rate limiting)  │
+│  ├── Middleware (Security, RBAC, rate limiting) │
 │  ├── Simulation (Data generation engine)        │
 │  └── Models (Pydantic schemas — shared types)   │
 └─────────────────────────────────────────────────┘
@@ -77,7 +77,7 @@ The GenAI assistant receives live stadium context through a **token-efficient co
 
 ### State Management
 
-- **Backend**: Single `StadiumSimulator` singleton manages all state in-memory with asyncio lock for thread safety. State snapshots are broadcast to WebSocket subscribers on every tick.
+- **Backend**: Single `StadiumSimulator` singleton manages all state in-memory with atomic state swaps for thread safety. State snapshots are broadcast to WebSocket subscribers on every tick.
 - **Frontend**: Custom `useStadiumState` hook wraps the WebSocket connection and exposes computed selectors (critical alerts, congestion summary) to avoid unnecessary re-renders.
 
 ---
@@ -86,7 +86,7 @@ The GenAI assistant receives live stadium context through a **token-efficient co
 
 ### Data Flow Blueprint
 
-```
+```text
 [Simulation Engine] ─────tick────→ [StadiumState Snapshot]
          │                                    │
          │                           ┌────────┴────────┐
@@ -206,7 +206,7 @@ cd backend && pip install -r requirements.txt && python -m pytest tests/ -v
 
 ## 📁 Project Structure
 
-```
+```text
 ├── backend/
 │   ├── __init__.py
 │   ├── config.py                  # Configuration & stadium constants
@@ -359,5 +359,3 @@ npm run build
 ## 📄 License
 
 Built for the FIFA World Cup 2026 Smart Stadiums & Tournament Operations challenge.
-#   S m a r t - S t a d i u m s - T o u r n a m e n t - O p e r a t i o n s  
- 
