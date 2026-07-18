@@ -161,7 +161,7 @@ export default function StaffAssistant() {
               className={`chat-message chat-message--${msg.role}`}
               role={msg.content?.includes('⚠️ Error') ? 'alert' : 'document'}
               aria-live={msg.content?.includes('⚠️ Error') ? 'assertive' : 'off'}
-              aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content.substring(0, 100)}`}
+              aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content?.substring(0, 100) || ""}`}
             >
               {renderMarkdown(msg.content)}
               {msg.processingTime && (
