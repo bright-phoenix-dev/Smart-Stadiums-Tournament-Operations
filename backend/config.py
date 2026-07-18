@@ -70,14 +70,14 @@ STADIUM_CAPACITY: Final[int] = 82_500
 
 # Gate definitions: id → {name, location_description, max_throughput_per_hour}
 GATES: Final[dict] = {
-    "A": {"name": "Gate A", "zone": "North",  "max_throughput": 1200, "sections_served": list(range(100, 113))},
-    "B": {"name": "Gate B", "zone": "North-East", "max_throughput": 1200, "sections_served": list(range(113, 125))},
-    "C": {"name": "Gate C", "zone": "East",   "max_throughput": 1200, "sections_served": list(range(125, 138))},
-    "D": {"name": "Gate D", "zone": "South-East", "max_throughput": 1200, "sections_served": list(range(138, 150))},
-    "E": {"name": "Gate E", "zone": "South",  "max_throughput": 1200, "sections_served": list(range(150, 163))},
-    "F": {"name": "Gate F", "zone": "South-West", "max_throughput": 1200, "sections_served": list(range(163, 175))},
-    "G": {"name": "Gate G", "zone": "West",   "max_throughput": 1200, "sections_served": list(range(175, 188))},
-    "H": {"name": "Gate H", "zone": "North-West", "max_throughput": 1200, "sections_served": list(range(188, 200))},
+    "A": {"name": "Gate A", "zone": "North",  "max_throughput": 1200, "sections": list(range(100, 113))},
+    "B": {"name": "Gate B", "zone": "North-East", "max_throughput": 1200, "sections": list(range(113, 125))},
+    "C": {"name": "Gate C", "zone": "East",   "max_throughput": 1200, "sections": list(range(125, 138))},
+    "D": {"name": "Gate D", "zone": "South-East", "max_throughput": 1200, "sections": list(range(138, 150))},
+    "E": {"name": "Gate E", "zone": "South",  "max_throughput": 1200, "sections": list(range(150, 163))},
+    "F": {"name": "Gate F", "zone": "South-West", "max_throughput": 1200, "sections": list(range(163, 175))},
+    "G": {"name": "Gate G", "zone": "West",   "max_throughput": 1200, "sections": list(range(175, 188))},
+    "H": {"name": "Gate H", "zone": "North-West", "max_throughput": 1200, "sections": list(range(188, 200))},
 }
 
 # Concession zone definitions
