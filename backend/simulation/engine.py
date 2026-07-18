@@ -162,7 +162,7 @@ class StadiumSimulator:
         # 3. Lock-Free Concurrency & Atomic Memory Operations
         # Eliminated blocking `asyncio.Lock()`. Using atomic state swaps to prevent 
         # thread-priority inversion and context-switching overhead.
-        # self._lock = asyncio.Lock()  <-- REMOVED
+        self._lock = asyncio.Lock()
         
         # 4. Asymmetric Multiprocessing & IPI Elimination
         # Bypasses standard asyncio queues. Simulates a Single-Producer Single-Consumer (SPSC) 

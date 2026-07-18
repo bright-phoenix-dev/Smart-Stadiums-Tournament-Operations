@@ -9,7 +9,7 @@
  * @returns {{ isConnected: boolean, error: string|null, reconnect: function }}
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const WS_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('http', 'ws')
