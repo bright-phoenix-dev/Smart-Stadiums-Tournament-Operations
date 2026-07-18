@@ -16,7 +16,7 @@
 import React from 'react';
 
 export default function renderMarkdown(content) {
-  return content.split('\n').map((line, i, arr) => (
+  return (content?.split('\n') || []).map((line, i, arr) => (
     <React.Fragment key={i}>
       {line.split(/(\*\*[^*]+\*\*)/).map((part, j) =>
         part.startsWith('**') && part.endsWith('**') ? (

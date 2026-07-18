@@ -52,7 +52,7 @@ const TransitStatus = React.memo(function TransitStatus({ hubs = [] }) {
             >
               <div className="transit-item__header">
                 <span className="transit-item__name">
-                  {getTypeIcon(hub.transit_type)} {hub.name.split('—')[0].trim()}
+                  {getTypeIcon(hub.transit_type)} {hub.name?.split('—')[0]?.trim() || ""}
                 </span>
                 <span className={`transit-item__status transit-item__status--${getStatusClass(hub.status)}`}>
                   {hub.status}
