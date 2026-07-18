@@ -139,7 +139,7 @@ app.add_middleware(
 )
 
 # Efficiency Middleware: JSON Payload Compression for crowded stadium networks
-app.add_middleware(GzipMiddleware, minimum_size=1000)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
