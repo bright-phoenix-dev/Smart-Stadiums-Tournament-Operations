@@ -35,6 +35,7 @@ export default function StaffAssistant() {
   ]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+  const isLoading = status === 'loading';
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
