@@ -149,8 +149,8 @@ export default function FanChatWidget({ section = 120, language = 'en' }) {
             <div
               key={idx}
               className={`chat-message chat-message--${msg.role}`}
-              role={msg.content.includes('⚠️ Error') ? 'alert' : undefined}
-              aria-live={msg.content.includes('⚠️ Error') ? 'assertive' : undefined}
+              role={msg.content?.includes('⚠️ Error') ? 'alert' : undefined}
+              aria-live={msg.content?.includes('⚠️ Error') ? 'assertive' : undefined}
               aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'}`}
             >
               {renderMarkdown(msg.content)}

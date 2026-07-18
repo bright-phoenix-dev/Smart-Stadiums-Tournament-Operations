@@ -159,8 +159,8 @@ export default function StaffAssistant() {
             <div
               key={idx}
               className={`chat-message chat-message--${msg.role}`}
-              role={msg.content.includes('⚠️ Error') ? 'alert' : 'document'}
-              aria-live={msg.content.includes('⚠️ Error') ? 'assertive' : 'off'}
+              role={msg.content?.includes('⚠️ Error') ? 'alert' : 'document'}
+              aria-live={msg.content?.includes('⚠️ Error') ? 'assertive' : 'off'}
               aria-label={`${msg.role === 'user' ? 'You' : 'Assistant'}: ${msg.content.substring(0, 100)}`}
             >
               {renderMarkdown(msg.content)}
