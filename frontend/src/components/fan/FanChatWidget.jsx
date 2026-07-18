@@ -79,12 +79,13 @@ export default function FanChatWidget({ section = 120, language = 'en' }) {
           },
           conversationId
         );
+        const data = response.unwrap();
         
         // Race condition guard: ignore response if a newer request was sent
         if (requestCounter.current !== currentRequestId) return;
         
-        setConversationId(response.conversation_id);
-        setMessages((prev) => [...prev, { role: 'assistant', content: response.reply }]);
+        setConversationId(data.conversation_id);
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       } catch (error) {
         if (requestCounter.current !== currentRequestId) return;
         

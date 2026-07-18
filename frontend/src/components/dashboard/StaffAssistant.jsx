@@ -63,17 +63,18 @@ export default function StaffAssistant() {
 
     try {
       const response = await queryStaffAssistant(trimmed, conversationId);
+      const data = response.unwrap();
       
       // Race condition guard: ignore response if a newer request was sent
       if (requestCounter.current !== currentRequestId) return;
       
-      setConversationId(response.conversation_id);
+      setConversationId(data.conversation_id);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: response.reply,
-          processingTime: response.processing_time_ms,
+          content: data.reply,
+          processingTime: data.processing_time_ms,
         },
       ]);
     } catch (error) {
