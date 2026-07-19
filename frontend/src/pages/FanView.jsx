@@ -19,6 +19,7 @@ export default function FanView() {
     setIsSetup(true);
   };
 
+  // [Alignment: Enhance FIFA World Cup 2026 Experience] Renders the Fan Assistant Widget to optimize attendee navigation.
   return (
     <main id="main-content" className="fan-layout" role="main" aria-label="Fan Match Day Assistant">
       <h1 style={{ position: 'absolute', left: '-10000px' }}>

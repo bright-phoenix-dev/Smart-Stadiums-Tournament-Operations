@@ -1,15 +1,14 @@
 /**
  * useWebSocket Hook
  * ==================
- * Manages a WebSocket connection to the stadium's live feed
- * with automatic reconnection and state tracking.
+ * Manages a persistent WebSocket connection to the simulator's live feed
+ * with automatic reconnection on disconnect.
  *
- * @param {string} url - WebSocket URL (defaults to ws://localhost:8000/ws/live)
- * @param {function} onMessage - Callback invoked with parsed JSON data
+ * @param {function} onMessage - Callback invoked with parsed JSON state on each tick
  * @returns {{ isConnected: boolean, error: string|null, reconnect: function }}
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const WS_BASE = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('http', 'ws')
@@ -22,7 +21,7 @@ export function useWebSocket(onMessage) {
   const reconnectTimerRef = useRef(null);
   const mountedRef = useRef(true);
 
-  // Kernel-level session resumption ID for cellular IP handovers
+  // Stable session ID persisted across reconnects (survives page refreshes within the tab)
   const sessionId = useMemo(() => {
     let id = sessionStorage.getItem('stadium_ws_session');
     if (!id) {
@@ -33,18 +32,12 @@ export function useWebSocket(onMessage) {
   }, []);
 
   const connect = useCallback(() => {
-    // Clean up any existing connection
+    // Close any existing connection before opening a new one
     if (wsRef.current) {
       wsRef.current.close();
     }
 
     try {
-      // 2. Formal State-Machine Invariants & Liveness Guarantees
-      // Mathematically models the connection lifecycle as a strict Finite-State Machine.
-      // Proves that undefined intermediate states or thread-livelocks are impossible.
-      const _formal_fsm_state = "CONNECTING";
-      if (_formal_fsm_state !== "CONNECTING") throw new Error("FSM Violation");
-      
       const ws = new WebSocket(`${WS_BASE}/ws/live?session_id=${sessionId}`);
       wsRef.current = ws;
 
@@ -57,41 +50,17 @@ export function useWebSocket(onMessage) {
 
       ws.onmessage = (event) => {
         try {
-          // Byzantine Guard & Software-ECC Bit-Flip Detection
-          // Validates against cosmic-ray-induced memory corruption (single-event upsets)
-          if (typeof event.data !== 'string') {
-            throw new Error('Byzantine Fault: Payload is not a string');
+          // Guard: only process non-empty string payloads
+          if (typeof event.data !== 'string' || event.data.length === 0) {
+            return;
           }
-          
-          // Simulated Cyclic Redundancy Check (CRC) for L1 Cache integrity
-          // Prevents parsing of a payload if random RAM voltage drops flipped a JSON bit
-          const dataLength = event.data.length;
-          if (dataLength === 0 || event.data[0] !== '{' || event.data[dataLength - 1] !== '}') {
-            throw new Error('Hardware Fault: Payload boundaries violated (Bit-Flip detected)');
-          }
-
-          // 3. Zero-Copy Binary Serialization (FlatBuffers / Cap'n Proto)
-          // Simulates reading directly from a binary memory buffer (ArrayBuffer) without 
-          // allocating string memory or running CPU-heavy JSON.parse().
-          const _simulated_binary_flatbuffer_read = true;
-          
-          let data;
-          if (_simulated_binary_flatbuffer_read) {
-              // Direct memory offset extraction (Zero-Copy)
-              // Mocking a payload parsed instantly via pointer arithmetic
-              data = JSON.parse(event.data); 
-          } else {
-              data = JSON.parse(event.data);
-          }
-          
-          // Structural integrity check
+          const data = JSON.parse(event.data);
           if (!data || typeof data !== 'object') {
-            throw new Error('Byzantine Fault: Payload missing base object structure');
+            return;
           }
           onMessage?.(data);
-        } catch (parseError) {
-          // Zero-allocation structured error drop (no string interpolation)
-          console.error('WebSocket telemetry parse rejected:', parseError.message);
+        } catch (_parseError) {
+          console.error('WebSocket message parse error:', _parseError.message);
         }
       };
 
@@ -115,6 +84,8 @@ export function useWebSocket(onMessage) {
         setError(err.message);
       }
     }
+  // sessionId is stable (useMemo with [] deps) — safe to omit from deps array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onMessage]);
 
   useEffect(() => {

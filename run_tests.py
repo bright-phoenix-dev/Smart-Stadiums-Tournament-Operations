@@ -22,7 +22,6 @@ exit_code = pytest.main([
     "backend/tests/",
     "-v",
     "--tb=short",
-    "--import-mode=importlib",
     "-p", "no:cacheprovider",
 ])
 

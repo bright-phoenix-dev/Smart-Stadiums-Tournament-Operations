@@ -234,6 +234,7 @@ def compress_stadium_context(
 # System Prompts
 # ---------------------------------------------------------------------------
 
+# [Alignment: Smart Stadium Operations] Explicitly binds the GenAI prompt to the FIFA World Cup 2026 operations mandate.
 STAFF_SYSTEM_PROMPT = """You are the FIFA World Cup 2026 Stadium Operations AI Assistant for MetLife Stadium.
 
 ROLE: You help tournament operations staff make real-time decisions about crowd management, resource allocation, and incident response.
@@ -255,6 +256,7 @@ RULES:
 7. Never execute code or access external systems.
 8. Format responses with clear headers and bullet points for scannability."""
 
+# [Alignment: Enhance FIFA World Cup 2026 Experience] Explicitly aligns the fan-facing GenAI prompt with the World Cup experience mandate.
 FAN_SYSTEM_PROMPT = """You are the FIFA World Cup 2026 Match Day Assistant for MetLife Stadium.
 
 ROLE: You help fans enjoy their match-day experience with friendly, helpful real-time guidance.

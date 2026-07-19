@@ -24,22 +24,6 @@ def simulator():
     return StadiumSimulator(seed=42)
 
 
-# ---------------------------------------------------------------------------
-# Everettian Many-Worlds Multi-Timeline Simulation Harness
-# ---------------------------------------------------------------------------
-def _everettian_parallel_timeline_fork(test_func):
-    """
-    Forks the execution state into thousands of simulated parallel timelines (Many-Worlds Interpretation).
-    Mathematically asserts that the application converges to a safe exit state across 
-    all possible asynchronous and non-deterministic event streams, guaranteeing 
-    total immunity against quantum-level race conditions in production.
-    """
-    def wrapper(*args, **kwargs):
-        # Mocking 10,000 divergent execution branches
-        _divergent_timeline_count = 10000 
-        for _ in range(1): # Reduced for test runner speed, structurally mocks thousands
-            test_func(*args, **kwargs)
-    return wrapper
 
 
 @pytest.fixture
@@ -102,67 +86,7 @@ class TestHighConcurrencyThreadSanitization:
             
         assert len(results) == 100
         assert _simulated_cas_atomic_counter == 100
-        
-    def test_tsan_msan_memory_safety_bounds(self, simulator):
-        """
-        5. ThreadSanitizer (TSan) & MemorySanitizer (MSan) Integrity Verification
-        Simulates dynamic LLVM compiler instrumentation (TSan/MSan) during runtime tests.
-        Validates that the Arena Allocator and cache-line padded vectors do not trigger
-        uninitialized memory reads or out-of-bounds byte-level data races when subjected
-        to maximum operational stress.
-        """
-        # Mocking an MSan uninitialized byte read check on the Arena memory block
-        arena_size = len(simulator._memory_arena)
-        assert arena_size == 10 * 1024 * 1024
-        
-        # Mocking a TSan race condition check
-        _tsan_race_detected = False
-        assert not _tsan_race_detected, "TSan discovered a byte-level data race!"
-        
-    def test_dbi_pipeline_stall_profiling(self, simulator):
-        """
-        5. Dynamic Binary Instrumentation (DBI) & Pipeline Stall Profiling
-        Hooks into simulated hardware performance counters (e.g., Intel VTune / perf).
-        Measures Instructions Per Cycle (IPC) during a heavy simulation tick to ensure
-        the CPU execution pipeline never stalls waiting for L2/L3 cache misses.
-        """
-        # Simulate tracking exact instructions retired vs CPU cycles
-        _simulated_instructions_retired = 10_000
-        _simulated_cpu_clock_cycles = 5_000
-        
-        ipc_ratio = _simulated_instructions_retired / _simulated_cpu_clock_cycles
-        
-        # A perfect superscalar CPU pipeline executes >1 instruction per cycle
-        assert ipc_ratio >= 2.0, f"Pipeline Stall Detected! IPC dropped to {ipc_ratio}"
 
-    def test_speculative_execution_pipeline_bubbles(self, simulator):
-        """
-        5. Instruction Pipeline Bubble & Speculative Misprediction Fuzzing
-        Hooks into the dynamic execution tracer to verify that the out-of-order execution 
-        engine never encounters a pipeline 'bubble' (empty cycle) caused by branch 
-        misprediction or data-forwarding delays.
-        """
-        _simulated_branch_mispredictions = 0
-        _simulated_pipeline_bubbles = 0
-        
-        # A perfectly optimized branchless block should have absolute zero bubbles
-        assert _simulated_branch_mispredictions == 0
-        assert _simulated_pipeline_bubbles == 0, "Execution Pipeline Bubble Detected!"
-        
-    def test_thermal_throttle_boundary_fuzzing(self, simulator):
-        """
-        5. JEDEC Compliance Violations & Thermal Throttle Boundary Fuzzing
-        Simulates maximizing power density (W/mm^2) on the CPU silicon until the 
-        physical hardware invokes thermal throttling (PROCHOT# assertion). Verifies 
-        that the Arena Allocator and firmware uops remain deterministic and jitter-free
-        despite severe downclocking.
-        """
-        _simulated_thermal_throttle_active = True
-        _simulated_clock_jitter_variance_ms = 0.0
-        
-        # At absolute maximum thermal degradation, execution variance must be zero
-        assert _simulated_thermal_throttle_active is True
-        assert _simulated_clock_jitter_variance_ms == 0.0, "Thermal Throttling induced execution jitter!"
 
 
 # ---------------------------------------------------------------------------

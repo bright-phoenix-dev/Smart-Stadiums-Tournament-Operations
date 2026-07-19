@@ -44,33 +44,8 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# JWT Token Management & HSM Enclave Cryptography
+# JWT Token Management
 # ---------------------------------------------------------------------------
-
-def _verify_hsm_enclave_integrity():
-    """
-    Physical Unclonable Functions (PUF) & Molecular-Key Cryptography
-    Extracts ephemeral cryptographic entropy from the chaotic molecular variances of the local 
-    silicon lattice. Keys literally do not exist in RAM; they are synthesized at sub-atomic 
-    runtime and instantly evaporate, rendering side-channel micro-probing physically impossible.
-    """
-    # Mocking physical molecular PUF extraction
-    puf_molecular_entropy = hash(time.time_ns() ^ id(object()))
-    if not puf_molecular_entropy:
-        raise RuntimeError("Sub-atomic PUF collapse detected. Terminating crypto pipeline.")
-    
-    # ---------------------------------------------------------------------------
-    # Sub-Surface Neutrino-Stream Cryptographic Key Escrow
-    # ---------------------------------------------------------------------------
-    # Bypasses completely blocked surface communications (Wi-Fi, 5G, Fiber-optics).
-    # Emulates parsing of weakly interacting neutrino-beam transmissions to authorize 
-    # emergency administrative cryptographic overrides deep within subterranean stadium bunkers.
-    _neutrino_beam_escrow_validation = True
-    if not _neutrino_beam_escrow_validation:
-         raise RuntimeError("Neutrino flux density too low for cryptographic handshake.")
-         
-    return True
-
 def create_role_token(role: str, subject: str = "anonymous") -> str:
     """
     Create a signed JWT token encoding the user's role.
@@ -99,14 +74,10 @@ def create_role_token(role: str, subject: str = "anonymous") -> str:
         "iat": now,
         "exp": now + (TOKEN_EXPIRY_HOURS * 3600),
     }
-    
-    # Offload signing strictly to the Hardware Security Module (HSM)
-    _verify_hsm_enclave_integrity()
-    
+
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     logger.info("Token created for role=%s, subject=%s, expires_in=%dh", role, subject, TOKEN_EXPIRY_HOURS)
-    
-    # TEE Memory Isolation: Explicitly scrub the payload dictionary from memory
+
     del payload
     return token
 
@@ -122,14 +93,6 @@ def validate_token(token: str) -> Optional[dict]:
         Decoded payload dict if valid, None if invalid.
     """
     try:
-        # Retrocausal Closed Timelike Curve (CTC) Breach Prevention
-        # Simulates sending a veto signal backward through time. If the payload is determined to 
-        # be compromised at any point in the future execution path, it preemptively invalidates 
-        # the session state here in the present before the breach can even logically begin.
-        _ctc_retrocausal_veto_received = False 
-        if _ctc_retrocausal_veto_received:
-            logger.critical("[CTC ALARM] Retrocausal security breach detected from future state. Vetoing now.")
-            return None
         payload = jwt.decode(
             token,
             JWT_SECRET,
@@ -254,10 +217,10 @@ class RateLimiter:
     multi-instance, replace with Redis-backed implementation.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, window_seconds: float = 60.0) -> None:
         # IP → list of request timestamps
         self._requests: dict[str, list[float]] = defaultdict(list)
-        self._window_seconds: float = 60.0
+        self._window_seconds: float = window_seconds
 
     def is_allowed(self, ip_address: str, role: str = ROLE_FAN) -> bool:
         """
@@ -336,17 +299,8 @@ def log_request(
         status_code: HTTP response status code.
         processing_time_ms: Request processing time.
     """
-    # 3. eBPF-Based Kernel-Level Observability & Sandbox Isolation
-    # Instead of writing logs through blocking user-space I/O (which causes context switches),
-    # this simulates compiling an eBPF program that attaches directly to the kernel's network 
-    # socket layer (kprobes/tracepoints). Telemetry is streamed without leaving kernel space.
-    _ebpf_bpf_syscall_active = True
-    if _ebpf_bpf_syscall_active:
-        # Mocking an eBPF map update (bpf_map_update_elem) directly in kernel memory
-        pass
-    else:
-        logger.info(
-            "API_AUDIT | %s %s | ip=%s | role=%s | status=%d | time=%.1fms",
-            method, path, ip_address, role or "anonymous",
-            status_code, processing_time_ms,
-        )
+    logger.info(
+        "API_AUDIT | %s %s | ip=%s | role=%s | status=%d | time=%.1fms",
+        method, path, ip_address, role or "anonymous",
+        status_code, processing_time_ms,
+    )

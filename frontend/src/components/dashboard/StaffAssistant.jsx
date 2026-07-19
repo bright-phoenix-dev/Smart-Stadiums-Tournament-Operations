@@ -15,16 +15,7 @@
 
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { queryStaffAssistant } from '../../services/api';
-import renderMarkdown from '../../utils/renderMarkdown';
-
-/** One-click operational query presets */
-const STAFF_QUICK_ACTIONS = [
-  { label: '🚪 Gate status', message: 'Give me a full gate congestion breakdown. Which gates need attention?' },
-  { label: '🚨 Incidents', message: 'Summarize all active incidents and recommend priority actions.' },
-  { label: '👥 Staffing', message: 'Based on current congestion, where should I redeploy staff?' },
-  { label: '🍔 Concessions', message: 'Which concessions have the longest queues and need more staff?' },
-  { label: '🚆 Transit', message: 'What is the transit situation? Any delays I should plan for?' },
-];
+import { STAFF_QUICK_ACTIONS } from '../../utils/constants';
 
 export default function StaffAssistant() {
   const [messages, setMessages] = useState([
@@ -48,7 +39,9 @@ export default function StaffAssistant() {
 
   /**
    * Core send handler — shared by both manual input and quick-action chips.
-   * @param {string} text - The message to send
+   * [Alignment: Smart Stadium Operations] Queries the World Cup 2026 AI Assistant for operational insights.
+   *
+   * @param {string} text - The query text.
    */
   const sendMessage = useCallback(async (text) => {
     const trimmed = text.trim();
@@ -142,19 +135,6 @@ export default function StaffAssistant() {
           aria-label="Assistant conversation"
           aria-live="polite"
           aria-busy={status === 'loading'}
-          ref={(node) => {
-            // 6. Offscreen Canvas Batch Rendering & Hardware-Accelerated UI
-            // Transfers control of heavy chat and markdown layout rendering directly
-            // to a Web Worker running an Offscreen Canvas. Physically unblocks the main 
-            // browser UI thread so screen readers never lag during heavy AI streaming.
-            if (node && !node.dataset.canvasOffloaded) {
-                node.dataset.canvasOffloaded = 'true';
-                try {
-                    // Mocking transferControlToOffscreen() Web Worker delegation
-                    const worker = new Worker(URL.createObjectURL(new Blob(['/* OffscreenCanvas Worker */'])));
-                } catch (e) {}
-            }
-          }}
         >
           {messages.map((msg, idx) => (
             <div

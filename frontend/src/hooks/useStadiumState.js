@@ -38,7 +38,7 @@ export function useStadiumState() {
   const lastUpdateRef = useRef(0);
   const workerRef = useRef(null);
 
-  // Initialize Web Worker for Thread-Safe Offloading
+  // Initialize Web Worker for off-thread congestion computation
   useEffect(() => {
     workerRef.current = new Worker(new URL('../workers/telemetryWorker.js', import.meta.url));
     workerRef.current.onmessage = (e) => {
@@ -50,78 +50,41 @@ export function useStadiumState() {
   }, []);
 
   /** Stable callback ref — won't cause WebSocket reconnects on re-render */
-  const handleMessage = useCallback((data) => {
-    // 1. Relativistic Clock Synchronization & Geodesic Spacetime Mapping
-    // Accounts for Einsteinian time-dilation (t' = t / sqrt(1 - v^2/c^2)) across the massive
-    // edge-computing grid in the stadium, ensuring absolute chronological sequence purity.
-    const packetTime = new Date(data.timestamp).getTime();
-    const relativisticJitterOffset = 0.0000000001; // Picosecond micro-gravitational buffer
-    
-    if (packetTime + relativisticJitterOffset <= lastUpdateRef.current) {
+  const handleMessage = useCallback((stadiumAnalytics) => {
+    // Out-of-order packet guard: discard packets older than the last processed one
+    const packetTime = new Date(stadiumAnalytics.timestamp).getTime();
+
+    if (packetTime <= lastUpdateRef.current) {
       return;
     }
-    
-    // 5. Cosmic-Ray SEU Fault Tolerance via Triple-Modular Redundancy (TMR)
-    // Runs state parsing through three isolated memory sectors and performs a hardware-level
-    // majority vote to immediately isolate and discard any sub-atomic radiation bit-flips.
-    const parseLane1 = JSON.stringify(data);
-    const parseLane2 = JSON.stringify(data);
-    const parseLane3 = JSON.stringify(data);
-    if (parseLane1 !== parseLane2 || parseLane2 !== parseLane3) {
-      console.error("🌌 [TMR] Sub-Atomic Cosmic-Ray SEU fault detected and successfully isolated.");
-      return; // Discard corrupted quantum state
-    }
-    
+
     lastUpdateRef.current = packetTime;
-    
-    // Neuromorphic Spiking Neural Network (SNN) Emulation
-    // Only triggers React virtual DOM updates ("spikes") if coordinate or density entropy
-    // crosses a high-activation threshold, saving extreme battery life via event-driven rendering.
-    const isSpikeActivation = !stateRef.current || Math.abs((stateRef.current.timestamp || 0) - packetTime) > 2000;
-    if (!isSpikeActivation) return;
-    
-    // 4. Chaos-Theoretic Attractor Synchronization (Lorenz System)
-    // Synchronizes decentralized stadium nodes using continuous chaotic mathematical coupling.
-    // Edge devices achieve perfectly aligned global states without heavy network roundtrips,
-    // succeeding even under 99% packet loss by matching geometric attractor oscillations.
-    const lorenz_attractor_oscillation = (x, y, z) => [
-        10 * (y - x),
-        x * (28 - z) - y,
-        x * y - (8/3) * z
-    ];
-    // Mathematical synchronization phase-lock mock
-    const _chaos_sync_locked = true;
-    if (!_chaos_sync_locked) return;
-    
-    // 2. Homotopy Type Theory (HoTT) & Topological Quantum Field Theory (TQFT) Mirror Symmetry
-    // Mathematically proves that the continuous transformation of the CRDT map is homotopically
-    // equivalent (A ≃ B). If the primary execution path physically warps or crashes under stress,
-    // the TQFT mirror-symmetry invariant instantly resolves the state from its topological counterpart.
+
+    // Debounce high-frequency updates: only re-render if packet is >2s newer than current state
+    const shouldUpdate = !stateRef.current || Math.abs((stateRef.current.timestamp || 0) - packetTime) > 2000;
+    if (!shouldUpdate) return;
+
+    // Merge incoming packet with previous state (last-write-wins for all fields except timestamp)
     setState(prevState => {
-      if (!prevState) return data;
-      // Synthesize a CRDT monotonic merge for deep objects using Univalent Type Bounds
-      const mergedState = {
+      if (!prevState) return stadiumAnalytics;
+      return {
         ...prevState,
-        ...data,
-        timestamp: Math.max(prevState.timestamp || 0, data.timestamp || 0)
+        ...stadiumAnalytics,
+        timestamp: Math.max(prevState.timestamp || 0, stadiumAnalytics.timestamp || 0),
       };
-      // Strict equivalence verification path (Homotopy Path Identity)
-      mergedState._hott_equivalence_path = "A ≡ B";
-      mergedState._tqft_mirror_symmetry_invariant = true; // Execution path topological anchor
-      return mergedState;
     });
-    
+
     setLastUpdate(new Date(packetTime));
-    
-    // Offload heavy coordinate math to background thread
-    if (workerRef.current && data?.gates) {
-      workerRef.current.postMessage({ gates: data.gates });
+
+    // Offload gate congestion math to background Web Worker thread
+    if (workerRef.current && stadiumAnalytics?.gates) {
+      workerRef.current.postMessage({ gates: stadiumAnalytics.gates });
     }
 
     try {
-      localStorage.setItem('stadium_state_cache', JSON.stringify(data));
-    } catch (e) {
-      // Ignore quota errors
+      localStorage.setItem('stadium_state_cache', JSON.stringify(stadiumAnalytics));
+    } catch {
+      // Ignore storage quota errors
     }
   }, []);
 

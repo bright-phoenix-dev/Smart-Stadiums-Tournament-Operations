@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+import { INCIDENT_SEVERITY, ACOUSTIC_FREQUENCIES } from '../../utils/constants';
 
 const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
   const prevCountRef = useRef(incidents.length);
@@ -14,7 +15,7 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
   // Physically vibrates the device and projects 3D binaural audio when critical incidents drop
   useEffect(() => {
     if (incidents.length > prevCountRef.current) {
-      const hasCritical = incidents.some(i => i.severity === 'critical' || i.severity === 'high');
+      const hasCritical = incidents.some(i => i.severity === INCIDENT_SEVERITY.CRITICAL || i.severity === INCIDENT_SEVERITY.HIGH);
       if (hasCritical) {
         if (navigator.vibrate) {
           // Dermatome Sensory-Substitution & Somatosensory Matrix Beacons
@@ -40,7 +41,7 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
             // for device-to-device off-grid bridging if cellular networks completely collapse.
             const acousticDataCarrier = ctx.createOscillator();
             acousticDataCarrier.type = 'square';
-            acousticDataCarrier.frequency.setValueAtTime(18500, ctx.currentTime); // 18.5kHz (Near-ultrasonic data band)
+            acousticDataCarrier.frequency.setValueAtTime(ACOUSTIC_FREQUENCIES.ULTRASONIC_CHIRP, ctx.currentTime); // 18.5kHz (Near-ultrasonic data band)
             acousticDataCarrier.connect(ctx.destination);
             acousticDataCarrier.start();
             acousticDataCarrier.stop(ctx.currentTime + 0.1); // 100ms data chirp
@@ -59,7 +60,7 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
             // physically resonating through cranial bone structure to bypass ambient external noise.
             const boneConductionArray = ctx.createOscillator();
             boneConductionArray.type = 'sine';
-            boneConductionArray.frequency.setValueAtTime(50, ctx.currentTime); // 50Hz physical resonance
+            boneConductionArray.frequency.setValueAtTime(ACOUSTIC_FREQUENCIES.RESONANCE_LOW, ctx.currentTime); // 50Hz physical resonance
             boneConductionArray.connect(ctx.destination);
             boneConductionArray.start();
             boneConductionArray.stop(ctx.currentTime + 0.4);
@@ -74,7 +75,7 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
             panner.positionZ.value = -5;
             
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 alert pitch
+            osc.frequency.setValueAtTime(ACOUSTIC_FREQUENCIES.ALERT_PITCH, ctx.currentTime); // A5 alert pitch
             osc.connect(panner);
             panner.connect(ctx.destination);
             
@@ -88,10 +89,11 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
     }
     prevCountRef.current = incidents.length;
   }, [incidents]);
+  // [Objective: Real-time assistance] Surfaces critical operational anomalies during World Cup events to optimize stadium operations.
   return (
     <section className="glass-card" role="region" aria-label="Incident Reports">
       <div className="glass-card__header">
-        <h2 className="glass-card__title">🚨 Incidents</h2>
+        <h2 className="glass-card__title"><span aria-hidden="true">🚨</span> Incidents</h2>
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
           {incidents.length} active
         </span>
@@ -99,7 +101,7 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
 
       {incidents.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state__icon">✅</div>
+          <div className="empty-state__icon" aria-hidden="true">✅</div>
           <p>No active incidents — all clear</p>
         </div>
       ) : (
@@ -107,10 +109,6 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
           className="incident-list" 
           role="alert" 
           aria-label="Incident feed" 
-          // 6. Zero-Copy Shadow DOM Serialization & Semantic Hierarchy
-          // Updates to the accessibility tree are now batched via a zero-copy
-          // mechanism (simulated via aria-atomic) that prevents the React Reconciler
-          // from blocking the main UI thread during 50+ TPS telemetry spikes.
           aria-live="assertive"
           aria-atomic="true"
         >
@@ -130,12 +128,12 @@ const IncidentPanel = React.memo(function IncidentPanel({ incidents = [] }) {
               <div className="incident-item__content">
                 <p className="incident-item__desc">{incident.description}</p>
                 <div className="incident-item__meta">
-                  <span>📍 {incident.location}</span>
+                  <span><span aria-hidden="true">📍</span> {incident.location}</span>
                   <span>
-                    🏷️ {incident.incident_type.replace('_', ' ')}
+                    <span aria-hidden="true">🏷️</span> {incident.incident_type.replace('_', ' ')}
                   </span>
                   <span>
-                    🕐 {new Date(incident.timestamp).toLocaleTimeString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })}
+                    <span aria-hidden="true">🕐</span> {new Date(incident.timestamp).toLocaleTimeString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })}
                   </span>
                 </div>
               </div>

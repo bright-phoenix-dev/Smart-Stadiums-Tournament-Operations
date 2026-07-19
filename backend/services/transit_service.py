@@ -148,12 +148,12 @@ def get_transit_summary(state: StadiumState) -> dict:
             type_breakdown[t] = {
                 "count": 0,
                 "avg_delay": 0,
-                "_total_delay": 0,
+                "total_delay": 0,
                 "worst_hub": None,
                 "worst_delay": 0,
             }
         type_breakdown[t]["count"] += 1
-        type_breakdown[t]["_total_delay"] += delay
+        type_breakdown[t]["total_delay"] += delay
         if delay > type_breakdown[t]["worst_delay"]:
             type_breakdown[t]["worst_delay"] = delay
             type_breakdown[t]["worst_hub"] = hubs[i].name

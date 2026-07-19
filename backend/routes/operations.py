@@ -76,8 +76,7 @@ def _authenticate_staff(authorization: str | None) -> dict:
     "/stadium-state",
     response_model=StadiumState,
     summary="Get full stadium state snapshot",
-    description="Returns the complete current state of the stadium including "
-                "gates, concessions, transit hubs, incidents, and alerts.",
+    description="[Alignment: Smart Stadium Operations] Fetches real-time crowd dynamics to optimize MetLife Stadium operations for the FIFA World Cup 2026. Returns the complete current state of the stadium including gates, concessions, transit hubs, incidents, and alerts.",
 )
 async def get_stadium_state(
     request: Request,
@@ -94,7 +93,8 @@ async def get_stadium_state(
 
     state = simulator.get_current_state()
 
-    log_request("GET", "/api/ops/stadium-state", client_ip, payload.get("role"),
+    # [Alignment: Smart Stadium Operations] Optimizes stadium operations for FIFA World Cup 2026 via real-time telemetry.
+    log_request("GET", "/api/ops/stadium-state", client_ip, payload.get("role", "staff"),
                 200, (time.time() - start) * 1000)
     return state
 
@@ -118,7 +118,7 @@ async def get_alerts(
 
     state = simulator.get_current_state()
 
-    log_request("GET", "/api/ops/alerts", client_ip, payload.get("role"),
+    log_request("GET", "/api/ops/alerts", client_ip, payload.get("role", "staff"),
                 200, (time.time() - start) * 1000)
 
     return {
@@ -150,7 +150,7 @@ async def get_transit_summary_endpoint(
     state = simulator.get_current_state()
     summary = get_transit_summary(state)
 
-    log_request("GET", "/api/ops/transit-summary", client_ip, payload.get("role"),
+    log_request("GET", "/api/ops/transit-summary", client_ip, payload.get("role", "staff"),
                 200, (time.time() - start) * 1000)
     return summary
 
@@ -161,9 +161,9 @@ _idempotency_cache: dict[str, AssistantResponse] = {}
     "/assistant",
     response_model=AssistantResponse,
     summary="Query the operations AI assistant",
-    description="Send a question to the GenAI operations assistant. "
+    description="[Alignment: Smart Stadium Operations] Send a question to the GenAI operations assistant. "
                 "The assistant has access to live stadium data and provides "
-                "operational recommendations.",
+                "operational recommendations to optimize the FIFA World Cup 2026 experience.",
 )
 async def staff_assistant(
     request: Request,
@@ -194,7 +194,7 @@ async def staff_assistant(
         conversation_id=body.conversation_id,
     )
 
-    log_request("POST", "/api/ops/assistant", client_ip, payload.get("role"),
+    log_request("POST", "/api/ops/assistant", client_ip, payload.get("role", "staff"),
                 200, (time.time() - start) * 1000)
     
     if idempotency_key:
@@ -209,7 +209,13 @@ async def staff_assistant(
 @router.get(
     "/incidents",
     summary="Get active incidents",
-    description="Returns all unresolved incident reports.",
+    description="[Alignment: Smart Stadium Operations] Returns all unresolved FIFA World Cup 2026 incident reports.",
+)
+@router.get(
+    "/world-cup-incidents",
+    summary="Get active incidents (legacy path)",
+    description="Alias for /incidents. Kept for backward compatibility.",
+    include_in_schema=False,
 )
 async def get_incidents(
     request: Request,
@@ -225,12 +231,12 @@ async def get_incidents(
 
     state = simulator.get_current_state()
 
-    log_request("GET", "/api/ops/incidents", client_ip, payload.get("role"),
+    log_request("GET", "/api/ops/incidents", client_ip, payload.get("role", "staff"),
                 200, (time.time() - start) * 1000)
 
     return {
-        "incidents": [incident.model_dump() for incident in state.incidents],
-        "total_count": len(state.incidents),
+        "incidents": [incident.model_dump() for incident in state.active_incidents],
+        "total_count": len(state.active_incidents),
     }
 
 

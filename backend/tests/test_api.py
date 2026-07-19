@@ -74,12 +74,13 @@ class TestHighEntropyEdgeCases:
         assert response.status_code == 422
         
     def test_empty_string_input_handling(self, client, staff_token):
-        """Should gracefully handle empty string inputs without crashing the NLP pipeline."""
+        """Should reject empty messages with a validation error, not pass them to the NLP pipeline."""
         headers = {"Authorization": f"Bearer {staff_token}"}
         response = client.post("/api/ops/assistant", json={"message": "", "conversation_id": "test"}, headers=headers)
-        # Even if it's empty, it shouldn't 500 error. It should return a valid AssistantResponse.
-        assert response.status_code == 200
-        assert "message" in response.json()
+        # Empty input violates min_length=1 on AssistantRequest.message.
+        # Pydantic returns 422 Unprocessable Entity — the correct behavior:
+        # the validation layer rejects bad input before it reaches the NLP pipeline.
+        assert response.status_code == 422
         
     def test_concurrent_spike_simulation_mock(self, client):
         """Simulate high concurrency against the health endpoint to ensure no async blocking."""
@@ -94,17 +95,68 @@ class TestHighEntropyEdgeCases:
             
         asyncio.run(run_spike())
         
-    def test_ebpf_kernel_packet_drop_simulation(self, client):
+    def test_websocket_live_feed_receives_state(self):
         """
-        5. Kernel-Fault Injection & eBPF-Driven Packet Drop Simulation
-        Simulates an eBPF hook dynamically dropping TCP packets at the kernel level
-        to verify that the application recovers without corrupting active connections.
+        The /ws/live WebSocket should accept a connection, receive a real
+        stadium state broadcast, and return a valid JSON message.
+
+        Approach: use TestClient with lifespan='on' so the simulator starts.
+        Then connect to the WebSocket and manually advance one simulator tick
+        from a background thread to unblock the queue, so receive_text() returns
+        a real message without waiting for the full 5-second tick interval.
         """
-        _mock_ebpf_packet_dropped = True
-        if _mock_ebpf_packet_dropped:
-            # Simulate a raw socket failure recovery
-            response = client.get("/health")
-            assert response.status_code == 200 # System recovers seamlessly
+        import asyncio
+        import json
+        import threading
+        import time
+        from fastapi.testclient import TestClient
+        from backend.main import app
+        from backend.simulation.engine import simulator
+
+        with TestClient(app, raise_server_exceptions=True) as lifespan_client:
+            # Give the simulator a moment to initialize after lifespan startup
+            time.sleep(0.1)
+
+            # Connect to the WebSocket. receive_text() blocks until the simulator
+            # pushes a tick. We trigger that tick from a background thread.
+            def _trigger_tick_after_delay():
+                time.sleep(0.2)
+                # Run a single simulator advance + broadcast in the app's event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    async def _do_tick():
+                        await simulator._advance_tick()
+                        state = simulator._build_state()
+                        await simulator._broadcast(state)
+                    loop.run_until_complete(_do_tick())
+                finally:
+                    loop.close()
+
+            trigger_thread = threading.Thread(target=_trigger_tick_after_delay, daemon=True)
+            trigger_thread.start()
+
+            with lifespan_client.websocket_connect("/ws/live") as ws:
+                raw = ws.receive_text()
+
+        state = json.loads(raw)
+
+        assert isinstance(state, dict), "Expected a JSON object from /ws/live"
+        assert "gates" in state, "State missing 'gates' field"
+        assert "active_incidents" in state, "State missing 'active_incidents' field"
+        assert "total_attendance" in state, "State missing 'total_attendance' field"
+        assert "simulation_tick" in state, "State missing 'simulation_tick' field"
+        assert state["simulation_tick"] >= 0, "simulation_tick should be non-negative"
+
+        assert isinstance(state["gates"], list), "'gates' must be a list"
+        if state["gates"]:
+            gate = state["gates"][0]
+            assert "gate_id" in gate, "Gate entry missing 'gate_id'"
+            assert "congestion_pct" in gate, "Gate entry missing 'congestion_pct'"
+            assert 0 <= gate["congestion_pct"] <= 100, (
+                f"congestion_pct {gate['congestion_pct']} out of 0-100 range"
+            )
+        trigger_thread.join(timeout=5)
 
     def test_dev_token_staff(self, client):
         """Dev token endpoint should generate staff tokens."""

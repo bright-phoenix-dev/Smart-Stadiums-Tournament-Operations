@@ -6,7 +6,7 @@ uvicorn[standard]==0.30.0
 pydantic==2.9.0
 
 # Security
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]==3.4.0
 
 # GenAI
 google-generativeai==0.8.0

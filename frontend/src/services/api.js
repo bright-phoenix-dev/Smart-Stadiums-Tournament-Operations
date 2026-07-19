@@ -9,7 +9,7 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-// Automated Circuit Breaker for Self-Healing Resilience
+// Circuit Breaker: stops cascading failures when the backend is unhealthy
 const _circuitBreaker = {
   failures: 0,
   isOpen: false,
@@ -19,10 +19,12 @@ const _circuitBreaker = {
 };
 
 /**
- * Post-Quantum Lattice-Based Cryptographic Signatures (ML-DSA)
- * Generates a zero-allocation signature of the payload using a simulated 
- * Module-Lattice-Based Digital Signature Algorithm (ML-DSA) and ML-KEM.
- * Mathematically asserts absolute transit immunity against quantum adversaries.
+ * Generates a SHA-256 payload checksum for request integrity verification.
+ * Attached as the X-Device-Signature header on mutating requests.
+ * Note: This is a checksum, not a signed HMAC — it detects accidental
+ * corruption, not active adversarial tampering.
+ * @param {string} body - JSON-serialized request body
+ * @returns {Promise<string>} Hex-encoded SHA-256 hash
  */
 async function signPayload(body) {
   if (!body) return '';
@@ -33,51 +35,9 @@ async function signPayload(body) {
 }
 
 /**
- * Zero-Knowledge Proof (ZKP) Ticket Verification
- * Mathematically asserts a fan holds a valid ticket without transmitting the ticket serial or PII.
- */
-export async function generatezkSNARKProof(ticketSeed) {
-  // Simulates an elliptic curve zk-SNARK Groth16 proof generation
-  const hashBuffer = await crypto.subtle.digest('SHA-512', new TextEncoder().encode(ticketSeed));
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return 'zkp_' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
-}
-
-/**
- * Edge-Federated Learning Secure Aggregation (SecAgg)
- * Aggregates local on-device machine learning weights (e.g., crowd flow patterns) 
- * cryptographically before transmitting, strictly preserving local PII.
- */
-export async function transmitFederatedWeights(localWeightsTensor) {
-  // Simulates a homomorphic mask over local gradient weights
-  const maskedWeights = localWeightsTensor.map(w => w ^ 0xdeadbeef);
-  return request('/api/ml/secagg/push', { method: 'POST', body: JSON.stringify({ weights: maskedWeights }) });
-}
-
-/**
- * Zero-Knowledge Rollups (ZK-Rollups) for Transaction Merkle Trees
- * Batches thousands of offline offline concessions/ticket transactions into a single 
- * cryptographically immutable Merkle root to achieve constant-time Database O(1) commits.
- */
-export async function flushZKRollupBatch(transactions) {
-  const merkleRoot = await signPayload(JSON.stringify(transactions));
-  return request('/api/ledger/zk-rollup', { method: 'POST', body: JSON.stringify({ root: merkleRoot, count: transactions.length }) });
-}
-
-/**
- * Secure Multi-Party Computation (SMPC) Ticket Validation
- * Simulates Shamir's Secret Sharing polynomial evaluation. FIFA, Stadium Ops, 
- * and Transit Partners jointly verify a ticket without exposing the user's private key to any single party.
- */
-export async function verifySMPCTicket(ticketShares) {
-  // SMPC Mock: Evaluates f(x) = y across distributed nodes homomorphically
-  const combinedSecret = ticketShares.reduce((acc, val) => acc ^ val, 0);
-  return request('/api/ledger/smpc-verify', { method: 'POST', body: JSON.stringify({ sss_result: combinedSecret }) });
-}
-
-/**
  * Category-Theoretic Monad: Either<Error, Data>
- * Purely functional error propagation functor that physically prevents unchecked runtime mutations.
+ * Functional error propagation wrapper. Forces callers to handle
+ * both success and failure paths explicitly via .unwrap().
  */
 class Either {
   constructor(error, data) {
@@ -91,29 +51,14 @@ class Either {
 }
 
 /**
- * Thermodynamic Hardware Throttle Simulator
- * Actively yields the V8 event loop during simulated >90°C thermal CPU throttling,
- * mathematically proving the UI survives extreme battery-saver mode drops without crashing.
- */
-async function thermalThrottleYield() {
-  const isThermalThrottling = Math.random() > 0.95; // 5% chance to hit extreme stadium heat limits
-  if (isThermalThrottling) {
-    console.warn("Thermodynamic Throttle: Yielding event loop to prevent thermal shutdown...");
-    await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
-  }
-}
-
-/**
- * Generic fetch wrapper with error handling and JSON parsing.
- * Returns a formal Either Monad.
+ * Generic fetch wrapper with circuit breaker, error handling, and JSON parsing.
+ * Returns an Either monad — Right on success, Left on any error.
  *
  * @param {string} endpoint - API path (e.g., "/api/ops/stadium-state")
- * @param {RequestInit} options - Fetch options
- * @returns {Promise<any>} Parsed JSON response
- * @throws {Error} On network or API errors
+ * @param {RequestInit} [options={}] - Fetch options
+ * @returns {Promise<Either<Error, any>>} Parsed JSON response
  */
 async function request(endpoint, options = {}) {
-  await thermalThrottleYield();
   const url = `${API_BASE}${endpoint}`;
 
   if (_circuitBreaker.isOpen) {
@@ -127,11 +72,9 @@ async function request(endpoint, options = {}) {
 
   const defaultHeaders = {
     'Content-Type': 'application/json',
-    'X-PQC-KEM': 'ML-KEM-1024-Hybrid', // Post-Quantum Key Encapsulation (Lattice-Based)
-    'X-PQC-DSA': 'ML-DSA-87',          // Post-Quantum Digital Signature Algorithm
   };
 
-  // Cryptographic Signature Injection (Zero-Trust Model)
+  // Attach SHA-256 payload checksum on mutating requests
   if (options.body && options.method && options.method !== 'GET') {
     defaultHeaders['X-Device-Signature'] = await signPayload(options.body);
   }
@@ -165,7 +108,7 @@ async function request(endpoint, options = {}) {
     _circuitBreaker.failures = 0;
     _circuitBreaker.isOpen = false;
 
-    // Adversarial guard: Strict Content-Type parsing validation
+    // Validate Content-Type before parsing
     const isSuccessJson = response.headers.get('content-type')?.includes('application/json');
     if (!isSuccessJson) {
       throw new Error(`Invalid response format from server (expected JSON, got ${response.headers.get('content-type')}).`);
@@ -186,7 +129,7 @@ async function request(endpoint, options = {}) {
 
 // ---------------------------------------------------------------------------
 // Typed Endpoints Returning Formal Monads
-// --------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
 
 /** Fetch the full stadium state snapshot. */
 export async function getStadiumState() {

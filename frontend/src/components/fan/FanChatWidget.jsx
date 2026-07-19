@@ -10,7 +10,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { queryFanAssistant } from '../../services/api';
-import { LANGUAGES } from '../../utils/constants';
+
 import renderMarkdown from '../../utils/renderMarkdown';
 
 const QUICK_ACTIONS = [
@@ -26,7 +26,7 @@ export default function FanChatWidget({ section = 120, language = 'en' }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `⚽ Welcome to the FIFA World Cup 2026 at MetLife Stadium! I'm your match-day assistant. I can help you find food, restrooms, gates, and transit options. You're in Section ${section}. How can I help?`,
+      content: `<span aria-hidden="true">⚽</span> Welcome to the FIFA World Cup 2026 at MetLife Stadium! I'm your match-day assistant. I can help you find food, restrooms, gates, and transit options. You're in Section ${section}. How can I help?`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -49,7 +49,7 @@ export default function FanChatWidget({ section = 120, language = 'en' }) {
         document.documentElement.style.setProperty('--color-bg-primary', '#000'); // Instant black-out shield
         setMessages((prev) => [...prev, { 
           role: 'assistant', 
-          content: '🚨 Cognitive Shield Engaged. Voice-only routing to nearest quiet exit activated.' 
+          content: '<span aria-hidden="true">🚨</span> Cognitive Shield Engaged. Voice-only routing to nearest quiet exit activated.' 
         }]);
       }
     };
@@ -86,14 +86,14 @@ export default function FanChatWidget({ section = 120, language = 'en' }) {
         
         setConversationId(data.conversation_id);
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-      } catch (error) {
+      } catch {
         if (requestCounter.current !== currentRequestId) return;
         
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: "Sorry, I'm having trouble connecting. Please try again or ask a nearby staff member for help! 🏟️",
+            content: "Sorry, I'm having trouble connecting. Please try again or ask a nearby staff member for help! <span aria-hidden=\"true\">🏟️</span>",
           },
         ]);
       } finally {

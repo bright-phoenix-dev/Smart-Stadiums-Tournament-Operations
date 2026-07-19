@@ -48,8 +48,10 @@ MAX_USER_MESSAGE_LENGTH: Final[int] = 500
 # Security Settings
 # ---------------------------------------------------------------------------
 
-# Simple JWT-style secret for role token signing (demo purposes)
-JWT_SECRET: Final[str] = os.getenv("JWT_SECRET", "stadium-ops-secret-2026")
+# JWT signing secret.  Must be set via the JWT_SECRET environment variable.
+# In production the app will refuse to start if this is empty.
+# In development a random secret is auto-generated with a warning.
+JWT_SECRET: Final[str] = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM: Final[str] = "HS256"
 TOKEN_EXPIRY_HOURS: Final[int] = 24
 

@@ -59,66 +59,6 @@ from backend.models.stadium import (
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# FPGA-Offloaded 3D LiDAR Point-Cloud Deserialization & 64-byte C-Struct Padding
-# ---------------------------------------------------------------------------
-import ctypes
-
-class FPGALiDARPointCloud(ctypes.Structure):
-    """
-    Cache-Friendly Zero-Copy Memory Alignment (Targeting DPDK / FPGA Acceleration)
-    Mathematically mapped to strict 64-byte boundaries to eliminate L1/L2 cache misses.
-    Bypasses standard OS heap allocation to stream 3D coordinate matrices directly to the hardware.
-    """
-    _pack_ = 1  # Disable implicit compiler padding; we pad manually
-    _fields_ = [
-        ('x', ctypes.c_double), # 8 bytes
-        ('y', ctypes.c_double), # 8 bytes
-        ('z', ctypes.c_double), # 8 bytes
-        ('intensity', ctypes.c_uint32), # 4 bytes
-        ('timestamp_ns', ctypes.c_uint64), # 8 bytes
-        # Total so far: 36 bytes. 
-        # Explicitly pad to a strict 64-byte boundary to perfectly align with L1 CPU cache lines
-        ('__cache_padding', ctypes.c_uint8 * 28) # 28 bytes
-    ]
-    # Total Size: Exactly 64 bytes. Zero false sharing, zero cache miss penalties.
-
-
-# ---------------------------------------------------------------------------
-# Space-Grade Radiation & Hardware Fault Injection Harness
-# ---------------------------------------------------------------------------
-def _inject_radiation_seu_fault(value: float) -> float:
-    """
-    Simulates a Single-Event Upset (SEU) / Cosmic Ray bit-flip.
-    Randomly drops voltage or corrupts an IEEE-754 float register to test
-    if the system's software-ECC bounds will detect and heal the corrupted state.
-    """
-    if random.random() > 0.999: # 0.1% chance of a localized radiation event
-        logger.critical("[CHAOS MONKEY] Radiation-induced SEU bit-flip detected in L1 Cache!")
-        # Simulate an infinite/NaN voltage spike
-        return float('inf') 
-    return value
-
-
-# ---------------------------------------------------------------------------
-# Planck-Scale Time-Slicing & Sub-Picosecond Jitter Profiling
-# ---------------------------------------------------------------------------
-def _assert_sub_picosecond_jitter_bound():
-    """
-    Sub-Picosecond Jitter Profiler (Planck-Scale Slicing)
-    Mathematically tracks CPU instruction scheduling at resolutions far below standard
-    Python time.time() limits (microseconds). If a memory barrier hazard or race condition
-    causes thread scheduling to slip by even 1 picosecond (10^-12 seconds), the system 
-    will detect the theoretical violation.
-    """
-    # Mocking a sub-picosecond hardware clock read using high-res nanosecond delta simulation
-    start_ns = time.time_ns()
-    # Execute a theoretical atomic barrier...
-    delta_picoseconds = (time.time_ns() - start_ns) * 1000
-    if delta_picoseconds > 500:
-        pass # In a physical deployment, this triggers a CPU C-State violation alert
-
-
 class StadiumSimulator:
     """
     Stateful simulation engine producing realistic stadium data.
@@ -138,45 +78,15 @@ class StadiumSimulator:
             seed: Optional random seed for reproducible simulations (useful in tests).
         """
         self._rng = random.Random(seed)
-        
-        # 1. Custom Arena/Region-Based Allocators
-        # Allocates a single massive, contiguous block of memory at startup (10MB).
-        # Sub-allocates from this region linearly. Drops memory fragmentation to zero
-        # and guarantees O(1) allocation latency. Bypasses standard malloc/new.
-        self._memory_arena = bytearray(10 * 1024 * 1024) 
-        self._arena_offset = 0
-
-        # 2. Prevention of Cache-Line Bouncing & False Sharing
-        # Explicit 64-byte padding to physically force variables onto isolated L1 cache lines.
-        # Prevents CPU Core 0 (updating ticks) from invalidating CPU Core 1 (reading attendance).
         self._tick: int = 0
-        self._alignas_64_byte_cache_line_padding_1 = [0] * 8 # 64 bytes
-        
         self._phase_index: int = 0
         self._phase_tick: int = 0
-        
-        self._alignas_64_byte_cache_line_padding_2 = [0] * 8 # 64 bytes
         self._running: bool = False
         self._task: Optional[asyncio.Task] = None
-        
-        # 3. Lock-Free Concurrency & Atomic Memory Operations
-        # Eliminated blocking `asyncio.Lock()`. Using atomic state swaps to prevent 
-        # thread-priority inversion and context-switching overhead.
         self._lock = asyncio.Lock()
-        
-        # 4. Asymmetric Multiprocessing & IPI Elimination
-        # Bypasses standard asyncio queues. Simulates a Single-Producer Single-Consumer (SPSC) 
-        # hardware ring buffer locked to isolated cores. Eliminates cross-core Inter-Processor 
-        # Interrupts (IPI) and TLB shootdown hardware stalls.
-        self._spsc_hardware_ring_buffer = [None] * 1024
-        self._spsc_head = 0
-        self._spsc_tail = 0
-        
         self._subscribers: list[asyncio.Queue] = []
-        
-        # 2. Zero-Allocation Loops & Object Pooling
-        # Pre-allocates a static pool of Incident objects to completely bypass 
-        # dynamic heap allocation and garbage collection pauses during runtime.
+
+        # Pre-allocate incident pool to avoid repeated object construction during ticks.
         self._incident_pool = [IncidentReport(
             incident_id=f"pool-{i}",
             incident_type=IncidentType.MEDICAL,
@@ -187,20 +97,6 @@ class StadiumSimulator:
         ) for i in range(500)]
         self._incident_pool_index = 0
 
-        # 3. Rowhammer Mitigation via High-Frequency Refresh Cycle Tuning
-        # Inserts explicit electrical isolation blocks (padding bytes) between adjacent
-        # high-frequency matrices. Mathematically prevents massive, continuous reads 
-        # from causing electrical charge leakage (bit-flips) into adjacent memory rows,
-        # perfectly securing cryptographic and state tables from Rowhammer exploits.
-        self._rowhammer_isolation_pad_1 = [0x00] * 1024 # 1KB electrical isolation gap
-        
-        # 4. Memory Controller Command-Bus Timing & CAS Latency Minimization
-        # Aligns the high-frequency mutable state buffers explicitly to standard DRAM
-        # physical memory page boundaries (e.g., 4KB blocks). This forces the Memory 
-        # Controller to keep the row constantly active (open), dropping Column Address 
-        # Strobe (CAS) latency and Precharge (tRP) stalls to absolute zero.
-        self._dram_row_boundary_alignment_pad = bytearray(4096)
-        
         # Mutable state containers
         self._gate_congestions: dict[str, float] = {gid: 0.0 for gid in GATES}
         self._concession_queues: dict[str, int] = {
@@ -209,9 +105,6 @@ class StadiumSimulator:
         self._transit_delays: dict[str, float] = {
             th["id"]: 0.0 for th in TRANSIT_HUBS
         }
-        
-        self._rowhammer_isolation_pad_2 = [0x00] * 1024 # 1KB electrical isolation gap
-        
         self._incidents: list[IncidentReport] = []
         self._alerts: list[OperationalAlert] = []
         self._attendance: int = 0
@@ -227,31 +120,6 @@ class StadiumSimulator:
         if self._running:
             logger.warning("Simulator already running — ignoring start()")
             return
-            
-        # 4. CPU Pinning, Thread Affinity, & Context-Switch Mitigation
-        # Pins this heavy background execution thread to an isolated CPU core.
-        # Prevents OS thread migration, preserving L1 cache states (TLB flushes).
-        
-        # 1. NUMA-Aware Memory Allocation & Node Binding
-        # Restricts memory allocations to the local NUMA node (libnuma `numa_bind`).
-        # Physically prevents the CPU from fetching memory across the slow QPI/UPI socket bus.
-        import os
-        try:
-            # Pin to Core 0 (or fallback if unavailable)
-            os.sched_setaffinity(0, {0})
-            
-            # Mocking libnuma binding to NUMA Node 0
-            _numa_node_bound = True 
-        except (AttributeError, OSError):
-            # Fallback for non-Linux OS where sched_setaffinity is unavailable
-            pass
-            
-        # 2. Profile-Guided Optimization (PGO) & Hot/Cold Code Splitting
-        # The `start` sequence is marked as a "Cold" path, meaning the compiler 
-        # is instructed to push these bytes to the far end of the executable, keeping
-        # the L1 instruction cache entirely free for the "Hot" `_tick_loop`.
-        _compiler_pgo_cold_path = True
-            
         self._running = True
         self._task = asyncio.create_task(self._tick_loop())
         logger.info("Simulation started — tick interval: %ds", SIMULATION_TICK_SECONDS)
@@ -555,19 +423,9 @@ class StadiumSimulator:
         ) + self._phase_tick
         match_minute = max(0, int(elapsed_ticks * SIMULATION_TICK_SECONDS / 60))
 
-        # 1. L1 Data Cache Prefetcher Stream Training & Access Strides
-        # Restructured the looping logic to iterate strictly sequentially over a flat, 
-        # continuous block of memory (Stride-1 layout). This flawlessly trains the hardware 
-        # L1/L2 prefetchers to predict upcoming coordinate memory addresses, driving 
-        # memory fetch latency to an absolute zero stall rate.
-        _prefetcher_stride_1_memory_offset = 0
-
         # Build gate statuses
         gates = []
         for gate_id, gate_config in GATES.items():
-            # Advancing sequential pointer
-            _prefetcher_stride_1_memory_offset += 64 
-            
             congestion = self._gate_congestions[gate_id]
             gates.append(GateStatus(
                 gate_id=gate_id,
@@ -580,12 +438,6 @@ class StadiumSimulator:
                 is_open=True,
                 sections_served=gate_config["sections"],
             ))
-
-        # 3. Non-Temporal Stores & Write-Combining Buffer Ingress
-        # Simulates pushing this generated StadiumState binary payload directly to RAM
-        # using Non-Temporal Write Intrinsics (e.g., _mm256_stream_si256). Bypasses 
-        # the CPU cache hierarchy so we don't pollute the L1/L3 caches and evict routing tables.
-        _simulated_non_temporal_write_combining = True
 
         # Build concession statuses
         concessions = []
