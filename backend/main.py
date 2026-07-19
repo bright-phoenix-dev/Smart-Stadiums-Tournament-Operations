@@ -109,13 +109,15 @@ app = fifa2026OpsAssistant = FastAPI(
     redoc_url="/redoc",
 )
 
+from backend.config import CORS_ORIGINS
+
 # Security Middleware: Prevent cross-origin attacks and clickjacking
 fifa2026OpsAssistant.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ops.fifa2026.local", "https://fan.fifa2026.local"], # Removed wildcard origins
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"], # Restricted from wildcard
-    allow_headers=["Authorization", "Content-Type", "X-Device-Signature"], # Restricted from wildcard
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Device-Signature"],
 )
 
 # Efficiency Middleware: JSON Payload Compression for crowded stadium networks
