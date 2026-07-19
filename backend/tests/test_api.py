@@ -368,3 +368,47 @@ class TestFanEndpoints:
         assert data["accessibility_route"] is True
         combined = " ".join(data["steps"]).lower()
         assert "elevator" in combined or "ramp" in combined
+
+    @pytest.mark.asyncio
+    async def test_fan_assistant_e2e_live_data(self):
+        """
+        E2E test of the Fan Assistant using real live simulator state.
+        Ensures the fallback path references real gate data instead of mocked values.
+        """
+        from fastapi.testclient import TestClient
+        from backend.main import app
+        from backend.simulation.engine import simulator
+
+        with TestClient(app, raise_server_exceptions=True) as lifespan_client:
+            # Trigger a simulator tick to populate state BEFORE we query
+            await simulator._advance_tick()
+            state = simulator._build_state()
+            await simulator._broadcast(state)
+
+            # Use a Dev Fan Token
+            token_resp = lifespan_client.get("/dev/token/fan")
+            token = token_resp.json()["token"]
+
+            response = lifespan_client.post(
+                "/api/fan/assistant",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "message": "Which gate should I use to exit?",
+                    "fan_profile": {"seat_section": 105, "language": "en"}
+                }
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "reply" in data
+
+            # Verify the response is not the generic prompt injection or default fallback,
+            # and that it contains live data (gate names and numeric congestion).
+            reply = data["reply"]
+            assert "Best gates for you right now" in reply, "Should use gate recommendation fallback"
+            
+            # The simulator creates gates with specific names (e.g. "Gate A"). Check for 'Gate'
+            assert "Gate" in reply
+            # And it should contain numeric walk times and congestion percentages
+            assert "% full" in reply
+            assert "min walk" in reply
