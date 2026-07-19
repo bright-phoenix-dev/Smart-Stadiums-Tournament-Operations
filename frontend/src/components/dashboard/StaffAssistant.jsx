@@ -16,6 +16,7 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { queryStaffAssistant } from '../../services/api';
 import { STAFF_QUICK_ACTIONS } from '../../utils/constants';
+import renderMarkdown from '../../utils/renderMarkdown';
 
 export default function StaffAssistant() {
   const [messages, setMessages] = useState([
