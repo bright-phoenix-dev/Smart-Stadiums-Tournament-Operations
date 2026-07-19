@@ -82,18 +82,15 @@ class TestHighEntropyEdgeCases:
         # the validation layer rejects bad input before it reaches the NLP pipeline.
         assert response.status_code == 422
         
-    def test_concurrent_spike_simulation_mock(self, client):
+    async def test_concurrent_spike_simulation_mock(self, client):
         """Simulate high concurrency against the health endpoint to ensure no async blocking."""
         import asyncio
         async def fetch():
             return client.get("/health").status_code
             
-        async def run_spike():
-            tasks = [fetch() for _ in range(50)]
-            results = await asyncio.gather(*tasks)
-            assert all(r == 200 for r in results)
-            
-        asyncio.run(run_spike())
+        tasks = [fetch() for _ in range(50)]
+        results = await asyncio.gather(*tasks)
+        assert all(r == 200 for r in results)
         
     def test_websocket_live_feed_receives_state(self):
         """
